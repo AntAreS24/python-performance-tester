@@ -16,9 +16,9 @@ output_width = 500
 output_height = 500
 
 def createAnimatedMP4(path, width, height, animatedImages, fps):
-    print(f"[createAnimatedMP4] Generating MP4 video to {path}")
+    #print(f"[createAnimatedMP4] Generating MP4 video to {path}")
     # Define the codec and create VideoWriter object
-    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     # Create the OpenCV VideoWriter
     video = cv2.VideoWriter(path, # Filename
         fourcc, # Negative 1 denotes manual codec selection. You can make this automatic by defining the "fourcc codec" with "cv2.VideoWriter_fourcc"
@@ -32,7 +32,7 @@ def createAnimatedMP4(path, width, height, animatedImages, fps):
 
     # Release the video for it to be committed to a file
     video.release()
-    print(f"[createAnimatedMP4] Done")
+    #print(f"[createAnimatedMP4] Done")
 
 def effect_pan(src, effectFrom, effectTo, steps = 1):
     frames = []
@@ -46,10 +46,10 @@ def effect_pan(src, effectFrom, effectTo, steps = 1):
         frames.append(Frame(src, x_step, y_step))
     return frames
 
-def core_logic(index):
-    print("==========================")
+def core_logic(index, filename):
+    #print("==========================")
     print(f"== Iteration {index} of {repeats}")
-    print("==========================")
+    #print("==========================")
     fromEffect = Effect(0,0,"pan")
     toEffect = Effect(5500,3500,"pan")
     frames = effect_pan(image_path, fromEffect, toEffect, total_frames)
@@ -64,14 +64,14 @@ def core_logic(index):
         # plt.subplot(2, 1, 1), plt.imshow(inputImage)
 
         outputImg.paste(inputImage, (0,0))
-        print(f"\tprocessed image {idx} out of {len(frames)}")
+        #print(f"\tprocessed image {idx} out of {len(frames)}")
         # plt.subplot(2, 1, 2), plt.imshow(outputImg)
 
         # plt.show()
         
         images.append(outputImg)
     
-    targetpath = os.path.join("output", f"filename_{index}.mp4")
+    targetpath = os.path.join("output", f"{filename}_{index}.mp4")
 
     createAnimatedMP4(targetpath, output_width, output_height, images, 30)
     return index
@@ -79,34 +79,35 @@ def core_logic(index):
 
 def main():
     # 100x do the SAME thing...
+    print('--------- single core ---------')
+    start = time.process_time()
     for i in range(1,repeats):
         # Step 1: Create an effect to "pan" a large image
-        core_logic(i)
+        core_logic(i,"single")
+    return start
 
 
 def main_multi():
+    print('--------- multi core ---------')
+    start = time.process_time()
     with concurrent.futures.ProcessPoolExecutor() as executor:
         fake = range(repeats)
-        results = executor.map(core_logic, fake)
+        names = ["multi"] * repeats
+        results = executor.map(core_logic, fake, names)
 
         for result in results:
-            print(f"Done processing: #{result}")
-
+            # print(f"Done processing: #{result}")
+            pass
+    return start
 
 if __name__ == "__main__":
     print(f'You have {mp.cpu_count()} cores')
 
-    print('--------- single core ---------')
-    start = time.process_time()
-    # main()
-    end = time.process_time()
+    time1 = main()
 
-    print(f'It took {round(end-start,2)} secs on 1 core')
+    print(f'SINGLE CORE === It took {round(time.process_time()-time1,2)} secs on 1 core')
 
-    print('--------- multi core ---------')
-    start = time.process_time()
-    main_multi()
-    end = time.process_time()
-    print(f'It took {round(end-start,2)} secs on {mp.cpu_count()} cores')
+    time2 = main_multi()
+    print(f'MULTI CORE === It took {round(time.process_time()-time2,2)} secs on {mp.cpu_count()} cores')
 
   
