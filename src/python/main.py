@@ -78,36 +78,41 @@ def core_logic(index, filename):
 
 
 def main():
-    # 100x do the SAME thing...
-    print('--------- single core ---------')
-    start = time.process_time()
-    for i in range(1,repeats):
+    start = time.time()
+    print(f'--------- single core --------- ')
+    for i in range(repeats):
         # Step 1: Create an effect to "pan" a large image
         core_logic(i,"single")
-    return start
+    end = time.time()
+    return round(end-start,2)
 
 
 def main_multi():
-    print('--------- multi core ---------')
-    start = time.process_time()
+    start = time.time()
+    print(f'--------- multi core --------- ')
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        fake = range(repeats)
-        names = ["multi"] * repeats
-        results = executor.map(core_logic, fake, names)
+        futures = []
+        for i in range(repeats):
+            futures.append(executor.submit(core_logic, i, "multi"))
 
+        results = []
+        for future in concurrent.futures.as_completed(futures):
+            results.append(future.result())
+        
         for result in results:
-            # print(f"Done processing: #{result}")
-            pass
-    return start
+            print(f"Done processing: #{result}")
+    end = time.time()
+    result = round(end-start,2)
+    return result
 
 if __name__ == "__main__":
     print(f'You have {mp.cpu_count()} cores')
 
     time1 = main()
-
-    print(f'SINGLE CORE === It took {round(time.process_time()-time1,2)} secs on 1 core')
+    
+    print(f'SINGLE CORE === It took {time1} secs on 1 core')
 
     time2 = main_multi()
-    print(f'MULTI CORE === It took {round(time.process_time()-time2,2)} secs on {mp.cpu_count()} cores')
+    print(f'MULTI CORE === It took {time2} secs on {mp.cpu_count()} cores')
 
   
